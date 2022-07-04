@@ -1,3 +1,5 @@
 tabulate>=0.8.9
-loguru>=0.6.0
-watchfiles>=0.15.0
+
+# Optional
+# loguru>=0.6.0
+# watchfiles>=0.15.0
