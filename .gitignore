@@ -188,6 +188,6 @@ Temporary Items
 .DS_Store
 .AppleDouble
 .LSOverride
-*.log
 logs/
 *.out
+build.sh

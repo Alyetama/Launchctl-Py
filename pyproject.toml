@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "launchctl_py"
+version = "0.1.0"
+description = "Quickly create simple background services (i.e., launchctl agents) for macOS."
+authors = ["Alyetama <malyetama@pm.me>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+tabulate = ">=0.8.9"
+
+[tool.poetry.dev-dependencies]
+loguru = ">=0.6.0"
+watchfiles = ">=0.15.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+lpy = 'launchctl_py:cli.main'
+launchctl_py = 'launchctl_py:cli.main'
+launchctl_python = 'launchctl_py:cli.main'
