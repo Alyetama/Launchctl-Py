@@ -23,8 +23,11 @@ def status() -> str:
     for agent in agents:
         out = os.popen(f'launchctl list {agent}').read()
         match = re.search(r'.+"PID".+', out)
-        pid = int(match[0].strip()[:-1].split('= ')[1])
-        pid = f'{g}{pid}{R}'
+        if match:
+            pid = int(match[0].strip()[:-1].split('= ')[1])
+            pid = f'{g}{pid}{R}'
+        else:
+            pid = f'\033[40m{r}DOWN{R}\033[49m'
         LAGENTS = f'~/Library/LaunchAgents'
         if os.getenv('LAGENTS'):
             LAGENTS = '$LAGENTS'

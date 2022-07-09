@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "launchctl_py"
-version = "0.1.0"
+version = "0.1.1"
 description = "Quickly create simple background services (i.e., launchctl agents) for macOS."
 authors = ["Alyetama <malyetama@pm.me>"]
 license = "MIT"
