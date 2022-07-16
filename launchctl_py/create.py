@@ -2,12 +2,12 @@
 # coding: utf-8
 
 import json
-import os
 import shlex
 import signal
 import sys
 import textwrap
 from pathlib import Path
+from typing import Optional
 
 
 def keyboard_interrupt_handler(sig: int, _) -> None:
@@ -17,27 +17,54 @@ def keyboard_interrupt_handler(sig: int, _) -> None:
     sys.exit(1)
 
 
-def create() -> None:
+def create(noninteractive: bool = False,
+           agent_name: Optional[str] = None,
+           exec_bin: Optional[str] = None,
+           cmd_args: Optional[str] = None) -> None:
     """Create a new launchctl agent."""
     signal.signal(signal.SIGINT, keyboard_interrupt_handler)
 
     HOME = Path.home()
-    L_PATH = f'{HOME}/Library/Logs'
-    domain = 'local'
-    if os.getenv('DEFAULT_DOMAIN'):
-        domain = os.getenv('DEFAULT_DOMAIN')
 
-    agent_name = input('Agent Name (CamelCase): ')
-    exec_bin = input('Executable binary full path: ')
-    cmd_args = input('Program arguments: ')
+    lagents_rc = f'{Path.home()}/.lpyrc'
+
+    if not Path(lagents_rc).exists():
+        with open(lagents_rc, 'w') as j:
+            LAGENTS_PREFIX = f'{HOME}/Library/LaunchAgents'
+            DOMAIN = 'local'
+            L_PATH = f'{HOME}/Library/Logs'
+            json.dump(
+                {
+                    'prefix': LAGENTS_PREFIX,
+                    'domain': DOMAIN,
+                    'logs': L_PATH,
+                    'agents': []
+                }, j)
+    else:
+        with open(lagents_rc) as j:
+            lagents_rc_content = json.load(j)
+            LAGENTS_PREFIX = lagents_rc_content['prefix']
+            DOMAIN = lagents_rc_content['domain']
+            L_PATH = lagents_rc_content['logs']
+
+    if not noninteractive:
+        agent_name = input('Agent Name (CamelCase): ')
+        exec_bin = input('Executable binary full path: ')
+        cmd_args = input('Program arguments: ')
 
     program_args = ''
-    for arg in shlex.split(cmd_args):
-        program_args += f'\t\t<string>{arg}</string>\n'
+    for n, arg in enumerate(shlex.split(cmd_args)):
+        if n == 0:
+            program_args += f'\t\t<string>{arg}</string>\n'
+        else:
+            program_args += f'\t\t\t<string>{arg}</string>\n'
 
-    plist_content = f'''\ <?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE 
-    plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"> <plist version="1.0"> 
-    <dict> <key>Label</key> <string>com.{domain}.{agent_name}</string> 
+    plist_content = f'''\
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"> <plist version="1.0"> 
+    <dict>
+        <key>Label</key>
+        <string>com.{DOMAIN}.{agent_name}</string> 
 
         <key>ProgramArguments</key>
         <array>
@@ -52,17 +79,18 @@ def create() -> None:
         <true/>
 
         <key>StandardErrorPath</key>
-        <string>{L_PATH}/com.{domain}/com.{domain}.{agent_name}.err</string>
+        <string>{L_PATH}/com.{DOMAIN}/com.{DOMAIN}.{agent_name}.err</string>
 
         <key>StandardOutPath</key>
-        <string>{L_PATH}/com.{domain}/com.{domain}.{agent_name}.out</string>
+        <string>{L_PATH}/com.{DOMAIN}/com.{DOMAIN}.{agent_name}.out</string>
     </dict>
     </plist>
     '''  # noqa: E501
+    plist_content = textwrap.dedent(plist_content)
 
-    Path(f'{L_PATH}/com.{domain}').mkdir(exist_ok=True)
+    Path(f'{L_PATH}/com.{DOMAIN}').mkdir(exist_ok=True)
 
-    plist_fpath = f'{HOME}/Library/LaunchAgents/com.{domain}.{agent_name}.plist'  # noqa: E501
+    plist_fpath = f'{LAGENTS_PREFIX}/com.{DOMAIN}.{agent_name}.plist'
 
     print('-' * 80)
     print(plist_content)
@@ -74,19 +102,15 @@ def create() -> None:
         sys.exit(1)
 
     with open(plist_fpath, 'w') as f:
-        f.write(textwrap.dedent(plist_content))
+        f.write(plist_content)
 
-    lagents = f'{Path.home()}/.lpyrc.json'
-
-    if not Path(lagents).exists():
-        with open(lagents, 'w') as j:
-            json.dump([], j)
-
-    with open(lagents, 'r+') as j:
+    with open(lagents_rc, 'r+') as j:
         agents = json.load(j)
-        agents.append(f'com.{domain}.{agent_name}')
-        j.seek(0)
-        json.dump(agents, j, indent=4)
+        entry = f'com.{DOMAIN}.{agent_name}'
+        if entry not in agents['agents']:
+            agents['agents'].append(entry)
+            j.seek(0)
+            json.dump(agents, j, indent=4)
 
     print('Run:')
     print(f'    sudo chown root:wheel {plist_fpath} && '

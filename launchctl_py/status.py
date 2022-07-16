@@ -11,16 +11,18 @@ from tabulate import tabulate
 
 def status() -> str:
     """Get the status of the agents you created."""
+    lagents_rc = f'{Path.home()}/.lpyrc'
     r, g, c, y, R = '\033[31m', '\033[32m', '\033[36m', '\033[33m', '\033[39m'
 
-    if not Path(f'{Path.home()}/.lpyrc.json').exists():
-        return f'{r}No custom agents found.{R}'
-    with open(f'{Path.home()}/.lpyrc.json', 'r') as j:
+    if not Path(lagents_rc).exists():
+        return f'{r}Could not find any custom agents...{R}'
+    with open(lagents_rc, 'r') as j:
         agents = json.load(j)
+        prefix = agents['prefix']
 
     table = []
 
-    for agent in agents:
+    for agent in agents['agents']:
         out = os.popen(f'launchctl list {agent}').read()
         match = re.search(r'.+"PID".+', out)
         if match:
@@ -28,16 +30,12 @@ def status() -> str:
             pid = f'{g}{pid}{R}'
         else:
             pid = f'\033[40m{r}DOWN{R}\033[49m'
-        LAGENTS = f'~/Library/LaunchAgents'
-        if os.getenv('LAGENTS'):
-            LAGENTS = '$LAGENTS'
-        plist_path = f'"{LAGENTS}/{agent}.plist"'
+        plist_path = f'{prefix}/{agent}.plist'.replace(str(Path.home()), '~')
         plist_path = f'{c}{plist_path}{R}'
-        label = f'{y}{agent.split(".")[-1]}{R}'
-        row = (label, plist_path, pid)
+        row = (plist_path, pid)
         table.append(row)
 
-    headers = [f'{r}{x}{R}' for x in ['LABEL', 'PATH', 'PID']]
+    headers = [f'{r}{x}{R}' for x in ['PATH', 'PID']]
 
     t = tabulate(table,
                  headers=headers,

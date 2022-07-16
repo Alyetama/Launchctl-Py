@@ -6,6 +6,9 @@ import argparse
 from launchctl_py.create import create
 from launchctl_py.status import status
 
+from launchctl_py.create import create
+from launchctl_py.status import status
+
 
 def _opts() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
