@@ -25,15 +25,6 @@ optional arguments:
   -s, --status  Get the status of the agents you created
 ```
 
-
-## 💡 Misc.
-
-Optional: if you want the domain name of your agents to be something other than `local` (default), run:
-```sh
-launchctl setenv DEFAULT_DOMAIN "ReplaceMe"
-echo 'setenv DEFAULT_DOMAIN ReplaceMe' >> ~/.conf.launchd
-```
-
 ---
 
 ...\
